@@ -1,0 +1,922 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>CutQ — Saloon Token System</title>
+<meta name="theme-color" content="#0a0a0a"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="black"/>
+<meta name="apple-mobile-web-app-title" content="CutQ"/>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700;900&family=DM+Sans:wght@300;400;500;600&family=Bebas+Neue&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script type="module">
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-app.js";
+  import { getFirestore, doc, setDoc, getDoc, getDocs, collection, onSnapshot, deleteDoc } from "https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore.js";
+  const cfg={apiKey:"AIzaSyAZTC0y4kUXtHA4zEzJR48VEfhAfF0EMtE",authDomain:"saloon-token-f9b94.firebaseapp.com",projectId:"saloon-token-f9b94",storageBucket:"saloon-token-f9b94.firebasestorage.app",messagingSenderId:"246103563916",appId:"1:246103563916:web:ad6b40f1ab5073ddd8a5a9"};
+  const app=initializeApp(cfg);
+  const db=getFirestore(app);
+  window.db=db;window.fbDoc=doc;window.fbSetDoc=setDoc;window.fbGetDoc=getDoc;window.fbGetDocs=getDocs;window.fbCol=collection;window.fbSnap=onSnapshot;window.fbDel=deleteDoc;
+  window.firebaseReady=true;
+  setTimeout(()=>{if(window.initApp)window.initApp();},300);
+</script>
+<style>
+:root{--gold:#D4AF37;--glight:#F0D060;--gdark:#A88A1A;--bk:#0a0a0a;--d1:#111;--d2:#1a1a1a;--d3:#242424;--gr:#777;--lt:#f0ede6;--wh:#fff;--red:#e05252;--grn:#52c272;--blu:#5299e0;--org:#e0a552;}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{font-family:'DM Sans',sans-serif;background:var(--bk);color:var(--lt);min-height:100vh;overflow-x:hidden;}
+.page{display:none;min-height:100vh;}.page.active{display:block;}
+#loader{position:fixed;inset:0;background:var(--bk);display:flex;align-items:center;justify-content:center;z-index:9999;flex-direction:column;gap:16px;}
+.spin{width:30px;height:30px;border:2px solid #333;border-top-color:var(--gold);border-radius:50%;animation:spin 0.8s linear infinite;}
+.logo-txt{font-family:'Bebas Neue',sans-serif;font-size:56px;letter-spacing:8px;background:linear-gradient(135deg,var(--gdark),var(--gold),var(--glight));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+/* LANDING */
+#pg-land{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;padding:40px 20px;text-align:center;background:radial-gradient(ellipse at 50% 0%,#1a1500 0%,var(--bk) 70%);}
+#pg-land.active{display:flex;}
+.land-logo{font-family:'Bebas Neue',sans-serif;font-size:76px;letter-spacing:10px;background:linear-gradient(135deg,var(--gdark),var(--gold),var(--glight));-webkit-background-clip:text;-webkit-text-fill-color:transparent;line-height:1;animation:fadeUp .8s ease both;}
+.land-sub{font-size:11px;letter-spacing:5px;text-transform:uppercase;color:var(--gr);margin-bottom:56px;animation:fadeUp .8s .2s ease both;}
+.land-btns{display:flex;flex-direction:column;gap:12px;width:100%;max-width:290px;animation:fadeUp .8s .3s ease both;}
+/* BUTTONS */
+.bg{background:linear-gradient(135deg,var(--gdark),var(--gold),var(--glight));color:var(--bk);border:none;padding:15px 28px;font-family:'DM Sans',sans-serif;font-weight:700;font-size:13px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border-radius:6px;transition:all .3s;box-shadow:0 4px 20px rgba(212,175,55,.2);}
+.bg:hover{transform:translateY(-2px);box-shadow:0 8px 28px rgba(212,175,55,.35);}
+.bg:disabled{opacity:.5;cursor:not-allowed;transform:none;}
+.bo{background:transparent;color:var(--gold);border:1px solid var(--gdark);padding:14px 28px;font-family:'DM Sans',sans-serif;font-weight:500;font-size:13px;letter-spacing:2px;text-transform:uppercase;cursor:pointer;border-radius:6px;transition:all .3s;}
+.bo:hover{background:rgba(212,175,55,.07);border-color:var(--gold);}
+.bgh{background:transparent;color:var(--gr);border:1px solid #2a2a2a;padding:11px 22px;font-family:'DM Sans',sans-serif;font-size:12px;cursor:pointer;border-radius:6px;transition:all .2s;}
+.bgh:hover{color:var(--lt);border-color:#444;}
+.wf{width:100%;}
+/* MODAL */
+.mo{display:none;position:fixed;inset:0;background:rgba(0,0,0,.88);backdrop-filter:blur(10px);z-index:1000;align-items:center;justify-content:center;padding:16px;}
+.mo.active{display:flex;}
+.mb{background:var(--d2);border:1px solid #252525;border-radius:14px;padding:34px 26px;width:100%;max-width:420px;animation:scaleIn .3s ease;position:relative;max-height:90vh;overflow-y:auto;}
+.mt{font-family:'Playfair Display',serif;font-size:24px;color:var(--gold);margin-bottom:5px;}
+.ms{font-size:12px;color:var(--gr);margin-bottom:26px;}
+.mc{position:absolute;top:12px;right:14px;background:none;border:none;color:var(--gr);font-size:17px;cursor:pointer;}
+.mc:hover{color:var(--lt);}
+.fg{margin-bottom:16px;}
+.fl{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gr);margin-bottom:6px;display:block;}
+.fi{width:100%;background:var(--d3);border:1px solid #333;color:var(--lt);padding:12px 14px;font-family:'DM Sans',sans-serif;font-size:14px;border-radius:7px;outline:none;transition:border-color .2s;}
+.fi:focus{border-color:var(--gdark);}
+.fi::placeholder{color:#444;}
+.fr{display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.em{color:var(--red);font-size:12px;margin-bottom:12px;display:none;padding:9px 12px;background:rgba(224,82,82,.07);border-radius:6px;}
+.sm{color:var(--grn);font-size:12px;margin-bottom:12px;display:none;padding:9px 12px;background:rgba(82,194,114,.07);border-radius:6px;}
+/* TOPBAR */
+.tb{background:var(--d2);border-bottom:1px solid #1e1e1e;padding:15px 22px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:100;}
+.tl{font-family:'Bebas Neue',sans-serif;font-size:24px;letter-spacing:3px;background:linear-gradient(135deg,var(--gold),var(--glight));-webkit-background-clip:text;-webkit-text-fill-color:transparent;}
+.ta{display:flex;gap:8px;align-items:center;}
+.nb{background:none;border:1px solid #2e2e2e;color:var(--gr);padding:7px 13px;font-size:11px;cursor:pointer;border-radius:5px;font-family:'DM Sans',sans-serif;transition:all .2s;letter-spacing:1px;}
+.nb:hover{border-color:var(--gdark);color:var(--gold);}
+/* BODY */
+.pb{padding:26px 22px;max-width:1200px;margin:0 auto;}
+/* CARD */
+.card{background:var(--d2);border:1px solid #1e1e1e;border-radius:12px;padding:20px;margin-bottom:16px;}
+.ct{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gr);margin-bottom:16px;}
+.sh{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;}
+.stl{font-family:'Playfair Display',serif;font-size:20px;color:var(--gold);}
+/* SALOON GRID */
+.sg{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:14px;}
+.sc{background:var(--d3);border:1px solid #222;border-radius:10px;padding:18px;transition:border-color .2s;}
+.sc:hover{border-color:#352f10;}
+.scn{font-family:'Playfair Display',serif;font-size:17px;color:var(--gold);margin-bottom:3px;}
+.scs{font-size:11px;color:var(--gr);margin-bottom:5px;}
+.sci{font-size:12px;color:#555;margin-bottom:14px;}
+.sca{display:flex;gap:7px;flex-wrap:wrap;}
+.bx{padding:6px 11px;font-size:11px;letter-spacing:1px;border-radius:5px;cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:600;text-transform:uppercase;transition:all .2s;border:none;}
+.bx-g{background:rgba(212,175,55,.12);color:var(--gold);border:1px solid rgba(212,175,55,.25);}
+.bx-g:hover{background:rgba(212,175,55,.22);}
+.bx-b{background:rgba(82,153,224,.1);color:var(--blu);border:1px solid rgba(82,153,224,.22);}
+.bx-b:hover{background:rgba(82,153,224,.2);}
+.bx-r{background:rgba(224,82,82,.08);color:var(--red);border:1px solid rgba(224,82,82,.2);}
+.bx-r:hover{background:rgba(224,82,82,.18);}
+/* DASHBOARD */
+#pg-dash{background:var(--bk);}
+#pg-dash.active{display:block;}
+.dbg{padding:4px 11px;border-radius:20px;font-size:10px;letter-spacing:2px;text-transform:uppercase;font-weight:700;}
+.bop{background:rgba(82,194,114,.1);color:var(--grn);border:1px solid rgba(82,194,114,.22);}
+.bcl{background:rgba(224,82,82,.1);color:var(--red);border:1px solid rgba(224,82,82,.22);}
+/* STATS */
+.sr{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:20px;}
+.sb{background:var(--d2);border:1px solid #1e1e1e;border-radius:10px;padding:16px;text-align:center;}
+.sn{font-family:'Bebas Neue',sans-serif;font-size:42px;color:var(--gold);line-height:1;margin-bottom:3px;}
+.sl{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gr);}
+/* TABS */
+.tabs{display:flex;border-bottom:1px solid #1e1e1e;margin-bottom:20px;overflow-x:auto;}
+.tb2{padding:11px 16px;font-size:11px;letter-spacing:1px;text-transform:uppercase;color:var(--gr);cursor:pointer;border-bottom:2px solid transparent;transition:all .2s;background:none;border-top:none;border-left:none;border-right:none;font-family:'DM Sans',sans-serif;white-space:nowrap;}
+.tb2.active{color:var(--gold);border-bottom-color:var(--gold);}
+.tp{display:none;}.tp.active{display:block;}
+/* CURRENT */
+.cc{background:linear-gradient(135deg,#1a1400,#0f0e00);border:1px solid var(--gdark);border-radius:14px;padding:26px;margin-bottom:18px;text-align:center;position:relative;overflow:hidden;}
+.cc::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(212,175,55,.07) 0%,transparent 65%);}
+.ccl{font-size:10px;letter-spacing:4px;text-transform:uppercase;color:var(--gdark);margin-bottom:5px;}
+.ccn{font-family:'Bebas Neue',sans-serif;font-size:90px;color:var(--gold);line-height:.9;margin-bottom:5px;text-shadow:0 0 35px rgba(212,175,55,.25);}
+.ccna{font-size:16px;font-weight:500;margin-bottom:2px;}
+.ccp{font-size:13px;color:var(--gr);margin-bottom:20px;}
+.cca{display:flex;gap:9px;justify-content:center;flex-wrap:wrap;}
+.ba{padding:11px 18px;border-radius:8px;font-size:11px;letter-spacing:1px;text-transform:uppercase;font-weight:700;cursor:pointer;border:none;font-family:'DM Sans',sans-serif;transition:all .2s;display:flex;align-items:center;gap:6px;}
+.bpre{background:rgba(82,194,114,.13);color:var(--grn);border:1px solid rgba(82,194,114,.28);}
+.bpre:hover{background:rgba(82,194,114,.23);}
+.bskp{background:rgba(224,82,82,.1);color:var(--red);border:1px solid rgba(224,82,82,.22);}
+.bskp:hover{background:rgba(224,82,82,.2);}
+.bnxt{background:linear-gradient(135deg,var(--gdark),var(--gold));color:var(--bk);}
+.bnxt:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(212,175,55,.28);}
+.bcll{background:rgba(82,153,224,.1);color:var(--blu);border:1px solid rgba(82,153,224,.22);}
+.bcll:hover{background:rgba(82,153,224,.2);}
+/* WAIT LIST */
+.wl{list-style:none;}
+.wi{display:flex;align-items:center;gap:12px;padding:12px 13px;border-bottom:1px solid #1a1a1a;transition:background .15s;}
+.wi:hover{background:rgba(255,255,255,.02);}
+.wi:last-child{border-bottom:none;}
+.win{font-family:'Bebas Neue',sans-serif;font-size:24px;color:var(--gold);min-width:42px;text-align:center;}
+.wii{flex:1;}
+.wina{font-size:14px;font-weight:500;}
+.wip{font-size:12px;color:var(--gr);}
+.wit{font-size:12px;color:var(--gdark);white-space:nowrap;}
+.wib{padding:3px 8px;border-radius:10px;font-size:10px;letter-spacing:1px;text-transform:uppercase;font-weight:600;}
+.wlate{background:rgba(224,165,82,.1);color:var(--org);}
+/* SETTINGS */
+.stg{display:grid;grid-template-columns:1fr 1fr;gap:16px;}
+.tgr{display:flex;align-items:center;justify-content:space-between;padding:13px 0;border-bottom:1px solid #1a1a1a;}
+.tgl{font-size:13px;font-weight:500;}
+.tgs{font-size:11px;color:var(--gr);margin-top:2px;}
+.tog{width:44px;height:23px;background:#2a2a2a;border-radius:12px;cursor:pointer;position:relative;transition:background .3s;border:none;flex-shrink:0;}
+.tog.on{background:var(--gdark);}
+.tog::after{content:'';position:absolute;top:3px;left:3px;width:17px;height:17px;background:white;border-radius:50%;transition:transform .3s;}
+.tog.on::after{transform:translateX(21px);}
+.cr{display:flex;gap:9px;flex-wrap:wrap;margin-top:7px;}
+.cd{width:24px;height:24px;border-radius:50%;cursor:pointer;border:2px solid transparent;transition:all .2s;flex-shrink:0;}
+.cd.sel{border-color:white;transform:scale(1.15);}
+.stag{display:inline-flex;align-items:center;gap:6px;background:var(--d3);border:1px solid #272727;border-radius:20px;padding:5px 11px;margin:3px;font-size:12px;}
+.stag button{background:none;border:none;color:var(--gr);cursor:pointer;font-size:12px;line-height:1;}
+.stag button:hover{color:var(--red);}
+.hi{display:flex;align-items:center;justify-content:space-between;padding:9px 12px;background:var(--d3);border-radius:7px;margin-bottom:7px;}
+.hd{font-size:12px;color:var(--gold);font-weight:500;}
+.hr2{font-size:11px;color:var(--gr);}
+/* REPORTS */
+.rtabs{display:flex;gap:7px;margin-bottom:16px;flex-wrap:wrap;}
+.rtab{padding:6px 13px;font-size:11px;letter-spacing:1px;text-transform:uppercase;border:1px solid #272727;color:var(--gr);cursor:pointer;border-radius:5px;background:none;font-family:'DM Sans',sans-serif;transition:all .2s;}
+.rtab.active{border-color:var(--gdark);color:var(--gold);background:rgba(212,175,55,.05);}
+.rsp{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-bottom:16px;}
+.rst{background:var(--d3);border-radius:8px;padding:13px;text-align:center;}
+.rsn{font-family:'Bebas Neue',sans-serif;font-size:32px;color:var(--gold);}
+.rsl{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gr);}
+/* QR */
+.qrc{background:linear-gradient(135deg,#100900,#1a1200);border:2px solid var(--gdark);border-radius:18px;padding:34px 26px;text-align:center;max-width:290px;margin:0 auto 22px;}
+.qrn{font-family:'Bebas Neue',sans-serif;font-size:28px;letter-spacing:4px;color:var(--gold);margin-bottom:3px;}
+.qrd{width:48px;height:1px;background:var(--gdark);margin:11px auto;}
+.qrt{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--gr);margin-top:9px;}
+/* BOOKING */
+#pg-book{min-height:100vh;background:linear-gradient(160deg,#0a0900 0%,#080800 50%,#000 100%);}
+#pg-book.active{display:block;}
+.bkh{padding:26px 18px 20px;text-align:center;border-bottom:1px solid rgba(212,175,55,.07);}
+.bkn{font-family:'Bebas Neue',sans-serif;font-size:44px;letter-spacing:6px;background:linear-gradient(135deg,var(--gold),var(--glight));-webkit-background-clip:text;-webkit-text-fill-color:transparent;margin-bottom:7px;}
+.bkst{display:inline-flex;align-items:center;gap:7px;padding:5px 13px;border-radius:20px;font-size:10px;letter-spacing:2px;text-transform:uppercase;}
+.sdot{width:7px;height:7px;border-radius:50%;}
+.bkb{padding:18px 18px 36px;max-width:450px;margin:0 auto;}
+.nsb{background:rgba(212,175,55,.05);border:1px solid rgba(212,175,55,.14);border-radius:10px;padding:13px 16px;margin-bottom:18px;display:flex;align-items:center;justify-content:space-between;}
+.nsl{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--gdark);}
+.nsi{font-size:12px;color:var(--gr);margin-top:2px;}
+.nsn{font-family:'Bebas Neue',sans-serif;font-size:36px;color:var(--gold);line-height:1;}
+.tkc{background:linear-gradient(135deg,#1a1400,#0f0e00);border:2px solid var(--gdark);border-radius:16px;padding:34px 22px;text-align:center;margin-bottom:18px;animation:scaleIn .5s ease;position:relative;overflow:hidden;}
+.tkc::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 50% 0%,rgba(212,175,55,.08) 0%,transparent 60%);}
+.tkl{font-size:10px;letter-spacing:4px;text-transform:uppercase;color:var(--gdark);margin-bottom:5px;}
+.tkn{font-family:'Bebas Neue',sans-serif;font-size:108px;color:var(--gold);line-height:.9;text-shadow:0 0 48px rgba(212,175,55,.3);margin-bottom:7px;}
+.tkna{font-size:14px;color:var(--lt);margin-bottom:12px;}
+.tkwb{background:rgba(0,0,0,.3);border-radius:8px;padding:9px 16px;display:inline-block;margin-bottom:12px;}
+.tkwn{font-family:'Bebas Neue',sans-serif;font-size:26px;color:var(--glight);}
+.tkwl{font-size:10px;letter-spacing:2px;text-transform:uppercase;color:var(--gr);}
+.tkah{font-size:12px;color:var(--gr);margin-bottom:16px;}
+.tkah span{color:var(--gold);}
+.tka{display:flex;gap:9px;justify-content:center;flex-wrap:wrap;}
+.bct{padding:10px 18px;background:rgba(224,82,82,.08);color:var(--red);border:1px solid rgba(224,82,82,.22);border-radius:6px;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;}
+.bct:hover{background:rgba(224,82,82,.18);}
+.blt{padding:10px 18px;background:rgba(224,165,82,.08);color:var(--org);border:1px solid rgba(224,165,82,.22);border-radius:6px;font-size:11px;letter-spacing:1px;text-transform:uppercase;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all .2s;}
+.blt:hover{background:rgba(224,165,82,.18);}
+.bct:disabled,.blt:disabled{opacity:.4;cursor:not-allowed;}
+.bkfc{background:var(--d2);border:1px solid #1e1e1e;border-radius:12px;padding:22px;margin-bottom:18px;}
+.bkft{font-family:'Playfair Display',serif;font-size:19px;color:var(--gold);margin-bottom:3px;}
+.bkfs{font-size:12px;color:var(--gr);margin-bottom:20px;}
+.svr{display:flex;flex-wrap:wrap;gap:7px;margin-bottom:16px;}
+.svp{padding:5px 11px;background:rgba(212,175,55,.06);border:1px solid rgba(212,175,55,.16);border-radius:20px;font-size:11px;color:var(--gdark);}
+.cbox{text-align:center;padding:64px 18px;display:flex;flex-direction:column;align-items:center;}
+.ci{font-size:56px;opacity:.35;margin-bottom:18px;}
+.cti{font-family:'Playfair Display',serif;font-size:26px;color:var(--gold);margin-bottom:9px;}
+.csu{font-size:13px;color:var(--gr);margin-bottom:7px;}
+.ctm{font-size:15px;color:var(--gdark);font-weight:600;}
+.cbar{text-align:center;padding:18px;border-top:1px solid rgba(212,175,55,.07);margin-top:18px;}
+.cbl{font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--gr);margin-bottom:5px;}
+.cbn{font-size:16px;color:var(--gold);font-weight:600;}
+.cbh{font-size:11px;color:var(--gr);margin-top:3px;}
+/* DISPLAY */
+#pg-disp{display:flex;align-items:center;justify-content:center;min-height:100vh;background:#000;}
+#pg-disp.active{display:flex;}
+.dw{text-align:center;}
+.dsn{font-family:'Bebas Neue',sans-serif;font-size:26px;letter-spacing:5px;color:#333;margin-bottom:10px;}
+.dl{font-size:12px;letter-spacing:6px;text-transform:uppercase;color:#444;margin-bottom:4px;}
+.dn{font-family:'Bebas Neue',sans-serif;font-size:190px;color:var(--gold);line-height:.9;text-shadow:0 0 80px rgba(212,175,55,.4);animation:pulse 2s infinite;}
+.dw2{font-size:15px;color:#444;margin-top:18px;}
+/* TOAST */
+.toast{position:fixed;bottom:22px;left:50%;transform:translateX(-50%) translateY(100px);background:var(--d2);border:1px solid #333;border-radius:9px;padding:11px 20px;font-size:13px;z-index:9998;transition:transform .35s ease;white-space:nowrap;box-shadow:0 8px 30px rgba(0,0,0,.5);}
+.toast.show{transform:translateX(-50%) translateY(0);}
+/* UTILS */
+.mt12{margin-top:12px;}.mt16{margin-top:16px;}.mt20{margin-top:20px;}.mb12{margin-bottom:12px;}
+.es{text-align:center;padding:32px 18px;color:var(--gr);}
+.ei{font-size:34px;margin-bottom:9px;opacity:.3;}
+select.fi{appearance:none;}
+::-webkit-scrollbar{width:4px;}::-webkit-scrollbar-track{background:transparent;}::-webkit-scrollbar-thumb{background:#2a2a2a;border-radius:2px;}
+@keyframes fadeUp{from{opacity:0;transform:translateY(16px);}to{opacity:1;transform:translateY(0);}}
+@keyframes scaleIn{from{opacity:0;transform:scale(.95);}to{opacity:1;transform:scale(1);}}
+@keyframes spin{to{transform:rotate(360deg);}}
+@keyframes pulse{0%,100%{opacity:1;}50%{opacity:.75;}}
+@media(max-width:600px){.sr{grid-template-columns:1fr 1fr;}.stg{grid-template-columns:1fr;}.rsp{grid-template-columns:1fr 1fr;}.fr{grid-template-columns:1fr;}.ccn{font-size:70px;}.cca{flex-direction:column;align-items:stretch;}.ba{justify-content:center;}.dn{font-size:120px;}}
+</style>
+</head>
+<body>
+<div id="loader"><div class="logo-txt">CutQ</div><div class="spin"></div></div>
+<div class="toast" id="toast"></div>
+
+<!-- LANDING -->
+<div id="pg-land" class="page">
+  <div style="font-size:50px;margin-bottom:14px;animation:fadeUp .6s ease both">✂️</div>
+  <div class="land-logo">CutQ</div>
+  <div class="land-sub" style="animation:fadeUp .8s .15s ease both">Smart Queue System for Saloons</div>
+  <div class="land-btns">
+    <button class="bg" onclick="om('m-al')">Super Admin</button>
+    <button class="bo" onclick="om('m-ol')">Owner Login</button>
+    <button class="bgh" onclick="demoBook()">View Demo Booking</button>
+    <button class="bgh" onclick="goDisp()">📺 Display Screen</button>
+  </div>
+</div>
+
+<!-- MODALS -->
+<div class="mo" id="m-al">
+  <div class="mb">
+    <button class="mc" onclick="cm('m-al')">✕</button>
+    <div class="mt">Admin Access</div><div class="ms">Super administrator login</div>
+    <div class="em" id="al-e">Incorrect password</div>
+    <div class="fg"><label class="fl">Password</label><input class="fi" type="password" id="al-p" placeholder="Admin password" onkeydown="if(event.key==='Enter')adminLogin()"/></div>
+    <button class="bg wf" onclick="adminLogin()">Enter Panel</button>
+  </div>
+</div>
+
+<div class="mo" id="m-ol">
+  <div class="mb">
+    <button class="mc" onclick="cm('m-ol')">✕</button>
+    <div class="mt">Owner Login</div><div class="ms">Access your saloon dashboard</div>
+    <div class="em" id="ol-e">Invalid credentials</div>
+    <div class="fg"><label class="fl">Saloon ID</label><input class="fi" type="text" id="ol-s" placeholder="e.g. ahmed-salon"/></div>
+    <div class="fg"><label class="fl">Password</label><input class="fi" type="password" id="ol-p" placeholder="Your password" onkeydown="if(event.key==='Enter')ownerLogin()"/></div>
+    <button class="bg wf mb12" onclick="ownerLogin()">Login</button>
+    <button class="bgh wf" onclick="showForgot()">Forgot Password?</button>
+  </div>
+</div>
+
+<div class="mo" id="m-fg">
+  <div class="mb">
+    <button class="mc" onclick="cm('m-fg')">✕</button>
+    <div class="mt">Reset Password</div><div class="ms">Contact your Super Admin to reset your password</div>
+    <div class="sm" id="fg-ok" style="display:block">Ask your Super Admin to reset your password from the Admin Panel, or they can update it directly.</div>
+    <button class="bg wf" onclick="cm('m-fg')">OK, Got It</button>
+  </div>
+</div>
+
+<div class="mo" id="m-as">
+  <div class="mb" style="max-width:500px">
+    <button class="mc" onclick="cm('m-as')">✕</button>
+    <div class="mt">Add New Saloon</div><div class="ms">Create a saloon profile</div>
+    <div class="fr">
+      <div class="fg"><label class="fl">Saloon Name</label><input class="fi" id="ns-n" placeholder="Ahmed Salon"/></div>
+      <div class="fg"><label class="fl">Slug (URL ID)</label><input class="fi" id="ns-s" placeholder="ahmed-salon" oninput="this.value=this.value.toLowerCase().replace(/\s+/g,'-').replace(/[^a-z0-9-]/g,'')"/></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label class="fl">Owner Name</label><input class="fi" id="ns-o" placeholder="Ahmed Khan"/></div>
+      <div class="fg"><label class="fl">Owner Email</label><input class="fi" type="email" id="ns-e" placeholder="ahmed@email.com"/></div>
+    </div>
+    <div class="fr">
+      <div class="fg"><label class="fl">Contact Number</label><input class="fi" id="ns-ph" placeholder="03XX-XXXXXXX"/></div>
+      <div class="fg"><label class="fl">Password (min 6)</label><input class="fi" type="password" id="ns-pw" placeholder="Min 6 chars"/></div>
+    </div>
+    <div class="em" id="as-e">Please fill all fields</div>
+    <button class="bg wf" onclick="addSaloon()">Create Saloon</button>
+  </div>
+</div>
+
+<div class="mo" id="m-rp">
+  <div class="mb">
+    <button class="mc" onclick="cm('m-rp')">✕</button>
+    <div class="mt">Reset Password</div><div class="ms" id="rp-s">Resetting password</div>
+    <div class="fg"><label class="fl">New Password</label><input class="fi" type="password" id="rp-p" placeholder="Min 6 chars"/></div>
+    <button class="bg wf" onclick="confirmReset()">Update Password</button>
+  </div>
+</div>
+
+<!-- ADMIN -->
+<div id="pg-adm" class="page">
+  <div class="tb"><div class="tl">CutQ Admin</div><div class="ta"><button class="nb" onclick="changeAdminPass()">Change Pass</button><button class="nb" onclick="gp('pg-land')">Logout</button></div></div>
+  <div class="pb">
+    <div class="sh"><div class="stl">✂️ All Saloons</div><button class="bg" onclick="om('m-as')">+ Add Saloon</button></div>
+    <div class="sg" id="sg"><div class="es" style="grid-column:1/-1"><div class="spin" style="margin:0 auto"></div></div></div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="pg-dash" class="page">
+  <div class="tb">
+    <div>
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:19px;letter-spacing:3px;color:var(--gold)" id="dn2">—</div>
+      <div style="font-size:11px;color:var(--gr)" id="do2">—</div>
+    </div>
+    <div style="display:flex;align-items:center;gap:9px">
+      <span class="dbg" id="db2">—</span>
+      <button class="nb" onclick="ownerOut()">Logout</button>
+    </div>
+  </div>
+  <div class="pb">
+    <div class="sr">
+      <div class="sb"><div class="sn" id="s1">0</div><div class="sl">Total</div></div>
+      <div class="sb"><div class="sn" id="s2">0</div><div class="sl">Waiting</div></div>
+      <div class="sb"><div class="sn" id="s3">0</div><div class="sl">Done</div></div>
+      <div class="sb"><div class="sn" id="s4">0</div><div class="sl">Cancelled</div></div>
+    </div>
+    <div class="tabs">
+      <button class="tb2 active" onclick="swTab(this,'tp1')">Queue</button>
+      <button class="tb2" onclick="swTab(this,'tp2')">Settings</button>
+      <button class="tb2" onclick="swTab(this,'tp3');loadRep()">Reports</button>
+      <button class="tb2" onclick="swTab(this,'tp4');renderQR()">QR Code</button>
+    </div>
+    <!-- QUEUE -->
+    <div class="tp active" id="tp1">
+      <div class="cc">
+        <div class="ccl">Now Serving</div>
+        <div class="ccn" id="cc1">—</div>
+        <div class="ccna" id="cc2">No active token</div>
+        <div class="ccp" id="cc3"></div>
+        <div class="cca">
+          <button class="ba bpre" onclick="markPresent()">✅ Present</button>
+          <button class="ba bskp" onclick="skipCur()">⏭ Skip</button>
+          <button class="ba bcll" onclick="callCur()">📞 Call</button>
+          <button class="ba bnxt" onclick="nextTok()">Next ▶</button>
+        </div>
+      </div>
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <div class="ct" style="margin-bottom:0">Waiting List</div>
+          <div style="font-size:12px;color:var(--gr)" id="wc">0 waiting</div>
+        </div>
+        <ul class="wl" id="wl"><li class="es"><div class="ei">🪑</div>No one waiting</li></ul>
+      </div>
+    </div>
+    <!-- SETTINGS -->
+    <div class="tp" id="tp2">
+      <div class="stg">
+        <div>
+          <div class="card">
+            <div class="ct">Saloon Info</div>
+            <div class="fg"><label class="fl">Saloon Name</label><input class="fi" id="st1" placeholder="Saloon Name"/></div>
+            <div class="fg"><label class="fl">Contact Number</label><input class="fi" id="st2" placeholder="03XX-XXXXXXX"/></div>
+            <div class="fg"><label class="fl">Per Person Time (min)</label><input class="fi" type="number" id="st3" placeholder="15" min="1" max="120"/></div>
+            <div class="fg">
+              <label class="fl">Color Theme</label>
+              <div class="cr">
+                <div class="cd sel" style="background:#D4AF37" data-c="#D4AF37" onclick="pickC(this)"></div>
+                <div class="cd" style="background:#52c272" data-c="#52c272" onclick="pickC(this)"></div>
+                <div class="cd" style="background:#5299e0" data-c="#5299e0" onclick="pickC(this)"></div>
+                <div class="cd" style="background:#e05252" data-c="#e05252" onclick="pickC(this)"></div>
+                <div class="cd" style="background:#a852e0" data-c="#a852e0" onclick="pickC(this)"></div>
+                <div class="cd" style="background:#e08852" data-c="#e08852" onclick="pickC(this)"></div>
+                <div class="cd" style="background:#52d4d4" data-c="#52d4d4" onclick="pickC(this)"></div>
+              </div>
+            </div>
+            <button class="bg wf" onclick="saveSt()">Save Settings</button>
+          </div>
+          <div class="card mt16">
+            <div class="ct">Security</div>
+            <div class="fg"><label class="fl">New Password</label><input class="fi" type="password" id="np1" placeholder="New password"/></div>
+            <div class="fg"><label class="fl">Confirm Password</label><input class="fi" type="password" id="np2" placeholder="Confirm password"/></div>
+            <button class="bo wf" onclick="chgPass()">Update Password</button>
+          </div>
+        </div>
+        <div>
+          <div class="card">
+            <div class="ct">Timing</div>
+            <div class="fg"><label class="fl">Opening Time</label><input class="fi" type="time" id="ot" value="09:00"/></div>
+            <div class="fg"><label class="fl">Closing Time</label><input class="fi" type="time" id="ct2" value="21:00"/></div>
+            <div class="tgr">
+              <div><div class="tgl">Auto Open/Close</div><div class="tgs">Booking opens 30 min before</div></div>
+              <button class="tog on" id="tog1" onclick="this.classList.toggle('on')"></button>
+            </div>
+          </div>
+          <div class="card mt16">
+            <div class="ct" style="margin-bottom:12px">Holidays / Off Days</div>
+            <div class="fg"><label class="fl">Start Date</label><input class="fi" type="date" id="hs"/></div>
+            <div class="fg"><label class="fl">End Date (optional)</label><input class="fi" type="date" id="he"/></div>
+            <button class="bo wf mb12" onclick="addHol()">Add Holiday</button>
+            <div id="hl"></div>
+          </div>
+          <div class="card mt16">
+            <div class="ct" style="margin-bottom:12px">Services</div>
+            <div id="sc2" style="margin-bottom:11px"></div>
+            <div style="display:flex;gap:8px">
+              <input class="fi" id="si" placeholder="e.g. Haircut" style="flex:1" onkeydown="if(event.key==='Enter')addSvc()"/>
+              <button class="bg" onclick="addSvc()">Add</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <!-- REPORTS -->
+    <div class="tp" id="tp3">
+      <div class="rtabs" id="rtabs"></div>
+      <div id="rb"><div class="es"><div class="ei">📊</div>Loading...</div></div>
+    </div>
+    <!-- QR -->
+    <div class="tp" id="tp4">
+      <div class="card" style="text-align:center">
+        <div class="ct" style="margin-bottom:20px">QR Code Card</div>
+        <div class="qrc" id="qrc">
+          <div style="font-size:22px;margin-bottom:7px">✂️</div>
+          <div class="qrn" id="qrn">SALOON</div>
+          <div class="qrd"></div>
+          <canvas id="qrv" style="border-radius:8px;margin:0 auto;display:block"></canvas>
+          <div class="qrd"></div>
+          <div class="qrt">Scan me for booking your seat</div>
+        </div>
+        <button class="bg mt20" onclick="dlQR()">⬇ Download QR Card (PNG)</button>
+        <div style="font-size:12px;color:var(--gr);margin-top:7px">High quality — print ready</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- BOOKING -->
+<div id="pg-book" class="page">
+  <div class="bkh">
+    <div class="bkn" id="bkn">SALOON</div>
+    <div class="bkst bop" id="bkstb"><div class="sdot" style="background:var(--grn)" id="bkd"></div><span id="bkst2">Open</span></div>
+  </div>
+  <div class="bkb">
+    <div class="cbox" id="bkcl" style="display:none">
+      <div class="ci">✂️</div>
+      <div class="cti" id="cti">Saloon is Closed</div>
+      <div class="csu" id="csu">Not taking bookings right now</div>
+      <div class="ctm" id="ctm"></div>
+    </div>
+    <div id="bkop">
+      <div class="nsb">
+        <div><div class="nsl">Now Serving</div><div class="nsi" id="nsi">0 people waiting</div></div>
+        <div class="nsn" id="nsn">—</div>
+      </div>
+      <div id="bksvb" style="display:none;margin-bottom:16px">
+        <div style="font-size:10px;letter-spacing:3px;text-transform:uppercase;color:var(--gr);margin-bottom:7px">Services</div>
+        <div class="svr" id="bksvl"></div>
+      </div>
+      <div id="bktks" style="display:none">
+        <div class="tkc">
+          <div class="tkl">Your Token</div>
+          <div class="tkn" id="tkn">0</div>
+          <div class="tkna" id="tkna"></div>
+          <div class="tkwb"><div class="tkwn" id="tkwn">0 min</div><div class="tkwl">Estimated Wait</div></div>
+          <div class="tkah" id="tkah"><span>0</span> people ahead</div>
+          <div class="tka">
+            <button class="bct" onclick="cancelTk()">✕ Cancel</button>
+            <button class="blt" onclick="imLate()">⏰ I'm Running Late</button>
+          </div>
+        </div>
+      </div>
+      <div id="bkfs">
+        <div class="bkfc">
+          <div class="bkft">Get Your Token</div>
+          <div class="bkfs2" style="font-size:12px;color:var(--gr);margin-bottom:20px">Fill your details to join the queue</div>
+          <div class="fg"><label class="fl">Full Name</label><input class="fi" id="bkfn" placeholder="Your full name"/></div>
+          <div class="fg"><label class="fl">Mobile Number</label><input class="fi" id="bkfp" placeholder="03XX-XXXXXXX" type="tel"/></div>
+          <div class="em" id="bke">Please enter valid name and phone</div>
+          <button class="bg wf mt12" onclick="bookTk()" id="bkbtn">🎫 Get My Token</button>
+        </div>
+      </div>
+    </div>
+    <div class="cbar"><div class="cbl">Need Help?</div><div class="cbn" id="bkcn">—</div><div class="cbh">Contact saloon for booking issues</div></div>
+  </div>
+</div>
+
+<!-- DISPLAY -->
+<div id="pg-disp" class="page">
+  <div class="dw">
+    <div class="dsn" id="dsn">CutQ</div>
+    <div class="dl">Now Serving</div>
+    <div class="dn" id="dn3">—</div>
+    <div class="dw2" id="dw2">— people waiting</div>
+  </div>
+</div>
+
+<script>
+// ─── UTILS ───────────────────────────────────────────────────
+const td=()=>new Date().toISOString().split('T')[0];
+const LS={get(k){try{return JSON.parse(localStorage.getItem(k));}catch(e){return null;}},set(k,v){localStorage.setItem(k,JSON.stringify(v));},del(k){localStorage.removeItem(k);}};
+
+function gp(id){document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));document.getElementById(id).classList.add('active');}
+function om(id){document.getElementById(id).classList.add('active');}
+function cm(id){document.getElementById(id).classList.remove('active');}
+
+let toastTmr;
+function showToast(m,d=2500){const el=document.getElementById('toast');el.textContent=m;el.classList.add('show');clearTimeout(toastTmr);toastTmr=setTimeout(()=>el.classList.remove('show'),d);}
+
+function showE(id,m){const el=document.getElementById(id);if(m)el.textContent=m;el.style.display='block';setTimeout(()=>el.style.display='none',4000);}
+function hideE(id){document.getElementById(id).style.display='none';}
+
+// ─── FIREBASE HELPERS ─────────────────────────────────────────
+async function waitFirebase(){let t=0;while(!window.db&&t<60){await new Promise(r=>setTimeout(r,100));t++;}if(!window.db){showToast('Connection error - refresh page');throw new Error('Firebase not loaded');}}
+async function fGet(col,id){await waitFirebase();const sn=await window.fbGetDoc(window.fbDoc(window.db,col,id));return sn.exists()?{id:sn.id,...sn.data()}:null;}
+async function fSet(col,id,data){await waitFirebase();await window.fbSetDoc(window.fbDoc(window.db,col,id),data,{merge:true});}
+async function fDel(col,id){try{await waitFirebase();await window.fbDel(window.fbDoc(window.db,col,id));}catch(e){}}
+function fListen(col,id,cb){if(!window.db){setTimeout(()=>fListen(col,id,cb),300);return ()=>{};}return window.fbSnap(window.fbDoc(window.db,col,id),sn=>{cb(sn.exists()?{id:sn.id,...sn.data()}:null);});}
+async function fAll(col){await waitFirebase();const sn=await window.fbGetDocs(window.fbCol(window.db,col));const r={};sn.forEach(d=>r[d.id]={id:d.id,...d.data()});return r;}
+
+// ─── ADMIN ───────────────────────────────────────────────────
+function getAP(){return LS.get('cq_ap')||'admin123';}
+
+function adminLogin(){
+  const p=document.getElementById('al-p').value;
+  if(p===getAP()){cm('m-al');document.getElementById('al-p').value='';loadAdmin();gp('pg-adm');}
+  else showE('al-e','Incorrect password');
+}
+function changeAdminPass(){const np=prompt('New admin password (min 6):');if(!np||np.length<6){showToast('Min 6 chars');return;}LS.set('cq_ap',np);showToast('✅ Admin password updated!');}
+
+async function loadAdmin(){
+  const g=document.getElementById('sg');
+  g.innerHTML='<div class="es" style="grid-column:1/-1"><div class="spin" style="margin:0 auto"></div></div>';
+  const all=await fAll('saloons');
+  const keys=Object.keys(all);
+  if(!keys.length){g.innerHTML='<div class="es" style="grid-column:1/-1"><div class="ei">🏪</div>No saloons yet</div>';return;}
+  g.innerHTML=keys.map(s=>{const d=all[s];return`<div class="sc"><div class="scn">${d.name}</div><div class="scs">ID: ${s}</div><div class="sci">${d.ownerName} · ${d.phone}</div><div class="sca"><button class="bx bx-g" onclick="viewBk('${s}')">Booking</button><button class="bx bx-b" onclick="openRP('${s}','${d.name}')">Reset Pass</button><button class="bx bx-r" onclick="delSln('${s}','${d.name}')">Delete</button></div></div>`;}).join('');
+}
+
+async function addSaloon(){
+  const n=document.getElementById('ns-n').value.trim();
+  const s=document.getElementById('ns-s').value.trim();
+  const o=document.getElementById('ns-o').value.trim();
+  const e=document.getElementById('ns-e').value.trim();
+  const ph=document.getElementById('ns-ph').value.trim();
+  const pw=document.getElementById('ns-pw').value;
+  if(!n||!s||!o||!ph||!pw||pw.length<6){showE('as-e','Fill all fields (password min 6)');return;}
+  const ex=await fGet('saloons',s);
+  if(ex){showE('as-e','Saloon ID already exists!');return;}
+  await fSet('saloons',s,{name:n,slug:s,ownerName:o,email:e,phone:ph,password:pw,settings:{perPersonTime:15,openTime:'09:00',closeTime:'21:00',autoTiming:true,color:'#D4AF37',services:['Haircut','Shave','Facial']},holidays:[],createdAt:Date.now()});
+  cm('m-as');['ns-n','ns-s','ns-o','ns-e','ns-ph','ns-pw'].forEach(i=>document.getElementById(i).value='');
+  showToast('✅ Saloon created!');loadAdmin();
+}
+
+async function delSln(s,n){if(!confirm(`Delete "${n}"?`))return;await fDel('saloons',s);showToast('Deleted');loadAdmin();}
+
+let rpSlug=null;
+function openRP(s,n){rpSlug=s;document.getElementById('rp-s').textContent=`Reset pass for: ${n}`;document.getElementById('rp-p').value='';om('m-rp');}
+async function confirmReset(){const p=document.getElementById('rp-p').value;if(!p||p.length<6){showToast('Min 6 chars');return;}await fSet('saloons',rpSlug,{password:p});cm('m-rp');showToast('✅ Password updated!');}
+
+// ─── OWNER AUTH ───────────────────────────────────────────────
+let oSlug=null,curSln=null,dashUnsub=null,qUnsub=null,selC='#D4AF37';
+
+async function ownerLogin(){
+  const s=document.getElementById('ol-s').value.trim().toLowerCase();
+  const p=document.getElementById('ol-p').value;
+  if(!s||!p){showE('ol-e','Fill all fields');return;}
+  const sln=await fGet('saloons',s);
+  if(!sln||sln.password!==p){showE('ol-e','Invalid ID or password');return;}
+  cm('m-ol');document.getElementById('ol-p').value='';
+  oSlug=s;LS.set('cq_sess',{slug:s,exp:Date.now()+30*24*60*60*1000});
+  loadDash(s);gp('pg-dash');
+}
+function ownerOut(){LS.del('cq_sess');oSlug=null;curSln=null;if(dashUnsub)dashUnsub();if(qUnsub)qUnsub();gp('pg-land');showToast('Logged out');}
+function checkSess(){const ss=LS.get('cq_sess');if(ss&&ss.exp>Date.now()){oSlug=ss.slug;loadDash(ss.slug);gp('pg-dash');}}
+function showForgot(){cm('m-ol');om('m-fg');}
+
+// ─── DASHBOARD ────────────────────────────────────────────────
+async function loadDash(s){
+  oSlug=s;
+  if(dashUnsub)dashUnsub();
+  dashUnsub=fListen('saloons',s,sln=>{
+    if(!sln)return;curSln=sln;
+    document.getElementById('dn2').textContent=sln.name;
+    document.getElementById('do2').textContent=sln.ownerName;
+    const op=isOpen(sln);
+    const b=document.getElementById('db2');b.textContent=op?'Open':'Closed';b.className='dbg '+(op?'bop':'bcl');
+    // Settings fields
+    document.getElementById('st1').value=sln.name||'';
+    document.getElementById('st2').value=sln.phone||'';
+    document.getElementById('st3').value=sln.settings?.perPersonTime||15;
+    document.getElementById('ot').value=sln.settings?.openTime||'09:00';
+    document.getElementById('ct2').value=sln.settings?.closeTime||'21:00';
+    const tog=document.getElementById('tog1');
+    if(sln.settings?.autoTiming!==false)tog.classList.add('on');else tog.classList.remove('on');
+    selC=sln.settings?.color||'#D4AF37';
+    document.querySelectorAll('.cd').forEach(d=>d.classList.toggle('sel',d.dataset.c===selC));
+    renderSvcs(sln);renderHols(sln);renderQR();
+  });
+  if(qUnsub)qUnsub();
+  const qk=`${s}_${td()}`;
+  qUnsub=fListen('queues',qk,q=>{renderQ(q||{tokens:[],currentToken:0,nextNum:1});});
+  checkReset(s);
+}
+
+function renderQ(q){
+  if(!curSln)return;
+  const ppt=curSln.settings?.perPersonTime||15;
+  const tks=q.tokens||[];
+  const srv=tks.find(t=>t.status==='serving');
+  const wait=tks.filter(t=>t.status==='waiting'||t.status==='late');
+  document.getElementById('s1').textContent=tks.length;
+  document.getElementById('s2').textContent=wait.length;
+  document.getElementById('s3').textContent=tks.filter(t=>t.status==='done').length;
+  document.getElementById('s4').textContent=tks.filter(t=>t.status==='cancelled'||t.status==='skipped').length;
+  document.getElementById('wc').textContent=wait.length+' waiting';
+  const cur=srv||wait[0];
+  if(cur){document.getElementById('cc1').textContent='#'+cur.num;document.getElementById('cc2').textContent=cur.name+(cur===wait[0]&&!srv?' (next)':'');document.getElementById('cc3').textContent=cur.phone;}
+  else{document.getElementById('cc1').textContent='—';document.getElementById('cc2').textContent='No active token';document.getElementById('cc3').textContent='';}
+  const wl=document.getElementById('wl');
+  if(!wait.length)wl.innerHTML='<li class="es"><div class="ei">🪑</div>No one waiting</li>';
+  else wl.innerHTML=wait.map((t,i)=>`<li class="wi"><div class="win">#${t.num}</div><div class="wii"><div class="wina">${t.name}</div><div class="wip">${t.phone}</div></div><div class="wit">~${i*ppt} min</div>${t.status==='late'?'<span class="wib wlate">Late</span>':''}</li>`).join('');
+  // Check notifications
+  wait.forEach((t,i)=>{const m=i*ppt;if(m<=10){const k='nf_'+t.num+'_'+td();if(!LS.get(k)){LS.set(k,1);bNotif('🔔 Almost Your Turn!',`Token #${t.num} — ~${m} min left at ${curSln.name}!`);}}});
+}
+
+// ─── QUEUE ACTIONS ────────────────────────────────────────────
+async function getQ(){const qk=`${oSlug}_${td()}`;const q=await fGet('queues',qk);return q||{id:qk,tokens:[],currentToken:0,nextNum:1};}
+async function saveQ(q){await fSet('queues',`${oSlug}_${td()}`,q);}
+
+async function markPresent(){const q=await getQ();const t=q.tokens.find(t=>t.status==='serving')||q.tokens.find(t=>t.status==='waiting');if(t){t.status='serving';await saveQ(q);showToast('✅ Marked present');}else showToast('No token');}
+
+async function nextTok(){
+  const q=await getQ();
+  const cur=q.tokens.find(t=>t.status==='serving');
+  if(cur)cur.status='done';
+  const nx=q.tokens.find(t=>t.status==='waiting'||t.status==='late');
+  if(nx){nx.status='serving';q.currentToken=nx.num;showToast('▶ Next: #'+nx.num);}
+  else{q.currentToken=0;showToast('Queue empty');}
+  await saveQ(q);
+}
+
+async function skipCur(){
+  const q=await getQ();
+  const cur=q.tokens.find(t=>t.status==='serving')||q.tokens.find(t=>t.status==='waiting');
+  if(!cur){showToast('No token to skip');return;}
+  cur.status='skipped';
+  bNotif('Token Skipped','Your token #'+cur.num+' was skipped. Please rebook.');
+  await saveQ(q);await nextTok();
+}
+
+function callCur(){const ph=document.getElementById('cc3').textContent;if(ph&&ph.length>5)window.location.href='tel:'+ph.replace(/\D/g,'');else showToast('No phone');}
+
+// ─── SETTINGS ────────────────────────────────────────────────
+function pickC(el){document.querySelectorAll('.cd').forEach(d=>d.classList.remove('sel'));el.classList.add('sel');selC=el.dataset.c;}
+
+async function saveSt(){
+  if(!oSlug)return;
+  const d={name:document.getElementById('st1').value||curSln.name,phone:document.getElementById('st2').value||curSln.phone,settings:{perPersonTime:parseInt(document.getElementById('st3').value)||15,openTime:document.getElementById('ot').value,closeTime:document.getElementById('ct2').value,autoTiming:document.getElementById('tog1').classList.contains('on'),color:selC,services:curSln.settings?.services||[]}};
+  await fSet('saloons',oSlug,d);showToast('✅ Settings saved!');renderQR();
+}
+
+async function chgPass(){const np=document.getElementById('np1').value;const cp=document.getElementById('np2').value;if(!np||np.length<6){showToast('Min 6 chars');return;}if(np!==cp){showToast('Passwords do not match');return;}await fSet('saloons',oSlug,{password:np});document.getElementById('np1').value='';document.getElementById('np2').value='';showToast('✅ Password updated!');}
+
+function renderSvcs(s){const sv=s.settings?.services||[];const c=document.getElementById('sc2');if(!sv.length){c.innerHTML='<div style="color:var(--gr);font-size:12px;margin-bottom:8px">No services</div>';return;}c.innerHTML=sv.map((s,i)=>`<span class="stag">${s}<button onclick="rmSvc(${i})">✕</button></span>`).join('');}
+async function addSvc(){const i=document.getElementById('si');const v=i.value.trim();if(!v)return;const sv=[...(curSln.settings?.services||[]),v];await fSet('saloons',oSlug,{settings:{...curSln.settings,services:sv}});i.value='';}
+async function rmSvc(idx){const sv=(curSln.settings?.services||[]).filter((_,i)=>i!==idx);await fSet('saloons',oSlug,{settings:{...curSln.settings,services:sv}});}
+
+function renderHols(s){const hs=s.holidays||[];const c=document.getElementById('hl');if(!hs.length){c.innerHTML='<div style="color:var(--gr);font-size:12px">No holidays</div>';return;}c.innerHTML=hs.map((h,i)=>`<div class="hi"><div><div class="hd">${h.start}</div>${h.end&&h.end!==h.start?`<div class="hr2">to ${h.end}</div>`:''}</div><button class="bx bx-r" onclick="rmHol(${i})">Remove</button></div>`).join('');}
+async function addHol(){const st=document.getElementById('hs').value;const en=document.getElementById('he').value||st;if(!st){showToast('Select date');return;}const hs=[...(curSln.holidays||[]),{start:st,end:en}];await fSet('saloons',oSlug,{holidays:hs});document.getElementById('hs').value='';document.getElementById('he').value='';showToast('Holiday added ✅');}
+async function rmHol(idx){const hs=(curSln.holidays||[]).filter((_,i)=>i!==idx);await fSet('saloons',oSlug,{holidays:hs});}
+
+// ─── REPORTS ─────────────────────────────────────────────────
+async function loadRep(){
+  if(!oSlug)return;
+  const tabs=document.getElementById('rtabs');
+  const ds=[];
+  for(let i=0;i<3;i++){const d=new Date();d.setDate(d.getDate()-i);ds.push(d.toISOString().split('T')[0]);}
+  tabs.innerHTML=ds.map((d,i)=>`<button class="rtab${i===0?' active':''}" onclick="showRep('${d}',this)">${i===0?'Today':i===1?'Yesterday':d}</button>`).join('');
+  showRep(ds[0],tabs.firstChild);
+}
+
+async function showRep(date,btn){
+  document.querySelectorAll('.rtab').forEach(t=>t.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  const q=await fGet('queues',`${oSlug}_${date}`)||{tokens:[]};
+  const tks=q.tokens||[];
+  document.getElementById('rb').innerHTML=`
+    <div class="rsp">
+      <div class="rst"><div class="rsn">${tks.length}</div><div class="rsl">Total</div></div>
+      <div class="rst"><div class="rsn">${tks.filter(t=>t.status==='done').length}</div><div class="rsl">Done</div></div>
+      <div class="rst"><div class="rsn">${tks.filter(t=>t.status==='cancelled').length}</div><div class="rsl">Cancelled</div></div>
+      <div class="rst"><div class="rsn">${tks.filter(t=>t.status==='skipped').length}</div><div class="rsl">Skipped</div></div>
+    </div>
+    <div class="card">
+      <div class="ct" style="margin-bottom:12px">Token Log — ${date}</div>
+      ${tks.length?tks.map(t=>`<div class="wi"><div class="win">#${t.num}</div><div class="wii"><div class="wina">${t.name}</div><div class="wip">${t.phone}</div></div><span class="wib" style="background:${sBg(t.status)};color:${sCl(t.status)}">${t.status}</span></div>`).join(''):'<div class="es"><div class="ei">📋</div>No tokens</div>'}
+    </div>`;
+}
+function sBg(s){return{done:'rgba(82,194,114,.1)',cancelled:'rgba(224,82,82,.1)',skipped:'rgba(224,165,82,.1)',waiting:'rgba(212,175,55,.1)',serving:'rgba(82,153,224,.1)',late:'rgba(224,165,82,.1)'}[s]||'#222';}
+function sCl(s){return{done:'#52c272',cancelled:'#e05252',skipped:'#e0a552',waiting:'#D4AF37',serving:'#5299e0',late:'#e0a552'}[s]||'#888';}
+
+// ─── QR CODE ──────────────────────────────────────────────────
+function renderQR(){
+  if(!curSln||!oSlug)return;
+  const url=location.origin+location.pathname+'?book='+oSlug;
+  document.getElementById('qrn').textContent=curSln.name.toUpperCase();
+  QRCode.toCanvas(document.getElementById('qrv'),url,{width:190,margin:2,errorCorrectionLevel:'H',color:{dark:'#000',light:'#fff'}});
+}
+
+async function dlQR(){
+  const s=curSln||(await fGet('saloons',oSlug||bkSlug));
+  if(!s)return;
+  const color=s.settings?.color||'#D4AF37';
+  const W=560,H=660;
+  const cv=document.createElement('canvas');cv.width=W;cv.height=H;
+  const ctx=cv.getContext('2d');
+  const g=ctx.createLinearGradient(0,0,W,H);g.addColorStop(0,'#1a1200');g.addColorStop(1,'#0a0800');
+  ctx.fillStyle=g;ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle=color;ctx.lineWidth=3;ctx.strokeRect(13,13,W-26,H-26);
+  ctx.lineWidth=1;ctx.globalAlpha=.35;ctx.strokeRect(20,20,W-40,H-40);ctx.globalAlpha=1;
+  ctx.font='34px serif';ctx.textAlign='center';ctx.fillText('✂️',W/2,68);
+  ctx.fillStyle=color;ctx.font='bold 46px Georgia,serif';ctx.fillText(s.name.toUpperCase(),W/2,124);
+  ctx.strokeStyle=color;ctx.lineWidth=1;ctx.globalAlpha=.35;ctx.beginPath();ctx.moveTo(W/2-65,140);ctx.lineTo(W/2+65,140);ctx.stroke();ctx.globalAlpha=1;
+  const qrEl=document.getElementById('qrv');
+  const qz=230;const qx=(W-qz)/2;const qy=158;
+  ctx.fillStyle='#fff';ctx.beginPath();
+  if(ctx.roundRect)ctx.roundRect(qx-9,qy-9,qz+18,qz+18,9);
+  else ctx.rect(qx-9,qy-9,qz+18,qz+18);
+  ctx.fill();ctx.drawImage(qrEl,qx,qy,qz,qz);
+  ctx.strokeStyle=color;ctx.globalAlpha=.35;ctx.beginPath();ctx.moveTo(W/2-65,qy+qz+26);ctx.lineTo(W/2+65,qy+qz+26);ctx.stroke();ctx.globalAlpha=1;
+  ctx.fillStyle='#777';ctx.font='14px Georgia,serif';ctx.fillText('SCAN ME FOR BOOKING YOUR SEAT',W/2,qy+qz+52);
+  if(s.phone){ctx.fillStyle='#555';ctx.font='13px sans-serif';ctx.fillText(s.phone,W/2,H-28);}
+  const lk=document.createElement('a');lk.download=s.name.replace(/\s+/g,'-')+'-QR.png';lk.href=cv.toDataURL('image/png');lk.click();
+}
+
+// ─── OPEN/CLOSE ───────────────────────────────────────────────
+function isOpen(s){
+  if(!s)return false;
+  const today=td();
+  if((s.holidays||[]).some(h=>today>=h.start&&today<=(h.end||h.start)))return false;
+  if(!s.settings?.autoTiming)return true;
+  const now=new Date();const nm=now.getHours()*60+now.getMinutes();
+  const [oh,om2]=(s.settings.openTime||'09:00').split(':').map(Number);
+  const [ch,cm2]=(s.settings.closeTime||'21:00').split(':').map(Number);
+  return nm>=(oh*60+om2-30)&&nm<(ch*60+cm2);
+}
+
+// ─── BOOKING ──────────────────────────────────────────────────
+let bkSlug=null,bkUnsub=null,myTk=null,nfSent=false;
+
+async function viewBk(s){bkSlug=s;await loadBook(s);gp('pg-book');}
+function demoBook(){fGet('saloons','demo-salon').then(s=>{if(!s)fSet('saloons','demo-salon',{name:'Demo Salon',slug:'demo-salon',ownerName:'Demo Owner',email:'demo@cutq.app',phone:'0300-1234567',password:'demo123',settings:{perPersonTime:15,openTime:'00:00',closeTime:'23:59',autoTiming:false,color:'#D4AF37',services:['Haircut','Shave','Facial','Hair Color']},holidays:[],createdAt:Date.now()});viewBk('demo-salon');});}
+
+async function loadBook(s){
+  bkSlug=s;nfSent=false;
+  const sln=await fGet('saloons',s);
+  if(!sln){showToast('Saloon not found');gp('pg-land');return;}
+  document.getElementById('bkn').textContent=sln.name.toUpperCase();
+  document.getElementById('bkcn').textContent=sln.phone||'—';
+  const color=sln.settings?.color||'#D4AF37';
+  document.documentElement.style.setProperty('--gold',color);
+  const sv=sln.settings?.services||[];
+  if(sv.length){document.getElementById('bksvb').style.display='block';document.getElementById('bksvl').innerHTML=sv.map(x=>`<span class="svp">${x}</span>`).join('');}
+  updBookSt(sln);
+  const saved=LS.get('cq_tk_'+s+'_'+td());
+  if(saved){myTk=saved;document.getElementById('bkfs').style.display='none';document.getElementById('bktks').style.display='block';}
+  if(bkUnsub)bkUnsub();
+  bkUnsub=fListen('queues',`${s}_${td()}`,q=>{
+    const queue=q||{tokens:[],currentToken:0,nextNum:1};
+    const tks=queue.tokens||[];
+    const wait=tks.filter(t=>t.status==='waiting'||t.status==='late');
+    document.getElementById('nsn').textContent=queue.currentToken?'#'+queue.currentToken:'—';
+    document.getElementById('nsi').textContent=wait.length+' people waiting';
+    updBookSt(sln);
+    if(myTk){const t=tks.find(t=>t.num===myTk.num);if(t)updTkDisp(t,wait,sln.settings?.perPersonTime||15);}
+  });
+  if('Notification'in window&&Notification.permission==='default')Notification.requestPermission();
+}
+
+function updBookSt(sln){
+  const op=isOpen(sln);
+  const b=document.getElementById('bkstb');
+  const d=document.getElementById('bkd');
+  b.className='bkst '+(op?'bop':'bcl');
+  d.style.background=op?'var(--grn)':'var(--red)';
+  document.getElementById('bkst2').textContent=op?'Open':'Closed';
+  document.getElementById('bkcl').style.display=op?'none':'block';
+  document.getElementById('bkop').style.display=op?'block':'none';
+  if(!op){
+    const today=td();
+    const isHol=(sln.holidays||[]).some(h=>today>=h.start&&today<=(h.end||h.start));
+    if(isHol){document.getElementById('cti').textContent='Saloon Closed Today';document.getElementById('csu').textContent='Holiday / Day Off';document.getElementById('ctm').textContent='';}
+    else{const[oh,om2]=(sln.settings?.openTime||'09:00').split(':').map(Number);const bm=om2-30>=0?om2-30:0;document.getElementById('cti').textContent='Saloon is Closed';document.getElementById('csu').textContent='Booking opens 30 min before opening';document.getElementById('ctm').textContent=`Opens at: ${String(oh).padStart(2,'0')}:${String(bm).padStart(2,'0')}`;}
+  }
+}
+
+function updTkDisp(tok,wait,ppt){
+  document.getElementById('tkn').textContent='#'+tok.num;
+  document.getElementById('tkna').textContent=tok.name;
+  const ah=wait.filter(t=>t.num<tok.num).length;
+  const wm=ah*ppt;
+  document.getElementById('tkwn').textContent=wm+' min';
+  if(tok.status==='serving')document.getElementById('tkah').innerHTML='🎉 <span style="color:var(--grn)">Your turn!</span>';
+  else if(tok.status==='cancelled'||tok.status==='skipped')document.getElementById('tkah').innerHTML='<span style="color:var(--red)">Token cancelled — rebook</span>';
+  else document.getElementById('tkah').innerHTML=`<span>${ah}</span> people ahead`;
+  // Schedule 10 min notif
+  if(!nfSent&&wm>10){nfSent=true;setTimeout(()=>{bNotif('🔔 10 Min Left!',`Token #${tok.num} — Get ready, almost your turn!`);},((wm-10)*60000));}
+}
+
+async function bookTk(){
+  const nm=document.getElementById('bkfn').value.trim();
+  const ph=document.getElementById('bkfp').value.trim();
+  if(!nm||ph.length<10){showE('bke','Enter valid name and phone (min 10 digits)');return;}
+  hideE('bke');
+  const btn=document.getElementById('bkbtn');btn.disabled=true;btn.textContent='Booking...';
+  const qk=`${bkSlug}_${td()}`;
+  const q=await fGet('queues',qk)||{tokens:[],currentToken:0,nextNum:1};
+  if((q.tokens||[]).find(t=>t.phone===ph&&t.status!=='cancelled'&&t.status!=='skipped')){showE('bke','This number already has a token today!');btn.disabled=false;btn.textContent='🎫 Get My Token';return;}
+  const tok={num:q.nextNum||1,name:nm,phone:ph,status:'waiting',bookedAt:Date.now()};
+  const tks=[...(q.tokens||[]),tok];
+  if(!q.currentToken){tok.status='serving';q.currentToken=tok.num;}
+  await fSet('queues',qk,{tokens:tks,currentToken:q.currentToken||tok.num,nextNum:(q.nextNum||1)+1});
+  myTk=tok;LS.set('cq_tk_'+bkSlug+'_'+td(),tok);
+  document.getElementById('bkfs').style.display='none';
+  document.getElementById('bktks').style.display='block';
+  btn.disabled=false;btn.textContent='🎫 Get My Token';
+  showToast('🎫 Token booked!');
+}
+
+async function cancelTk(){
+  if(!myTk||!confirm('Cancel your token?'))return;
+  const qk=`${bkSlug}_${td()}`;const q=await fGet('queues',qk);
+  if(!q)return;
+  const tks=(q.tokens||[]).map(t=>t.num===myTk.num?{...t,status:'cancelled'}:t);
+  await fSet('queues',qk,{tokens:tks});
+  LS.del('cq_tk_'+bkSlug+'_'+td());myTk=null;
+  document.getElementById('bktks').style.display='none';
+  document.getElementById('bkfs').style.display='block';
+  document.getElementById('bkfn').value='';document.getElementById('bkfp').value='';
+  showToast('Token cancelled');
+}
+
+async function imLate(){
+  if(!myTk)return;
+  const qk=`${bkSlug}_${td()}`;const q=await fGet('queues',qk);
+  if(!q)return;
+  const tks=q.tokens||[];const mt=tks.find(t=>t.num===myTk.num);
+  if(!mt||mt.status!=='waiting'){showToast('Cannot change now');return;}
+  mt.status='late';
+  const rest=tks.filter(t=>t.num!==mt.num);
+  await fSet('queues',qk,{tokens:[...rest,mt]});
+  showToast('⏰ Moved to end of queue');
+}
+
+// ─── DISPLAY ──────────────────────────────────────────────────
+let dUnsub=null;
+function goDisp(){gp('pg-disp');startDisp();}
+function startDisp(){
+  const s=bkSlug||oSlug||'demo-salon';
+  if(dUnsub)dUnsub();
+  dUnsub=fListen('queues',`${s}_${td()}`,q=>{
+    const queue=q||{tokens:[],currentToken:0};
+    document.getElementById('dn3').textContent=queue.currentToken?'#'+queue.currentToken:'—';
+    const w=(queue.tokens||[]).filter(t=>t.status==='waiting'||t.status==='late').length;
+    document.getElementById('dw2').textContent=w+' people waiting';
+  });
+  fGet('saloons',s).then(sln=>{if(sln)document.getElementById('dsn').textContent=sln.name.toUpperCase();});
+}
+
+// ─── NOTIFICATIONS ────────────────────────────────────────────
+function bNotif(title,body){
+  if('Notification'in window&&Notification.permission==='granted')new Notification(title,{body});
+  showToast(title);
+}
+
+// ─── MIDNIGHT RESET ───────────────────────────────────────────
+async function checkReset(s){
+  const k='cq_rst_'+s;const last=LS.get(k);const today=td();
+  if(last===today)return;
+  for(let i=4;i<=10;i++){const d=new Date();d.setDate(d.getDate()-i);fDel('queues',`${s}_${d.toISOString().split('T')[0]}`);}
+  LS.set(k,today);
+}
+setInterval(()=>{if(oSlug)checkReset(oSlug);},60000);
+
+// ─── TABS ────────────────────────────────────────────────────
+function swTab(btn,pid){
+  document.querySelectorAll('.tb2').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.tp').forEach(p=>p.classList.remove('active'));
+  btn.classList.add('active');document.getElementById(pid).classList.add('active');
+}
+
+// ─── URL ROUTING ──────────────────────────────────────────────
+function handleURL(){
+  const p=new URLSearchParams(location.search);
+  const book=p.get('book');const disp=p.get('display');
+  if(book){bkSlug=book;loadBook(book).then(()=>gp('pg-book'));}
+  else if(disp!==null){goDisp();}
+  else checkSess();
+}
+
+// ─── INIT ────────────────────────────────────────────────────
+window.initApp=function(){
+  document.getElementById('loader').style.display='none';
+  handleURL();
+};
+setTimeout(()=>{document.getElementById('loader').style.display='none';handleURL();},3000);
+</script>
+</body>
+</html>
