@@ -17,7 +17,6 @@
     "react-router-dom": "^6.23.1",
     "react-hot-toast": "^2.4.1",
     "html2canvas": "^1.4.1",
-    "vite-plugin-pwa": "^0.20.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.0",
