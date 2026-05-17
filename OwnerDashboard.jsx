@@ -374,6 +374,7 @@ export default function OwnerDashboard() {
                 { label: 'Open Time', key: 'openTime', type: 'time' },
                 { label: 'Close Time', key: 'closeTime', type: 'time' },
                 { label: 'Minutes Per Person', key: 'perPersonTime', type: 'number' },
+                { label: 'Number of Workers', key: 'workers', type: 'number' },
               ].map(({ label, key, type = 'text' }) => (
                 <div key={key}>
                   <label className="block text-dark-300 font-body text-sm mb-1.5">{label}</label>
