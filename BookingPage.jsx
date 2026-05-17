@@ -297,7 +297,7 @@ useEffect(() => {
                     lineHeight: 1,
                     color: ahead === 0 ? '#4ade80' : theme
                   }}>
-                    {ahead === 0 ? '🪒 Now' : formatMinutes(waitMins)}
+                    {ahead === 0 ? '🪒 Now' : formatMinutes(liveMins)}
                   </div>
                   <div className="text-gray-600 text-xs mt-1">{ahead === 0 ? 'your turn!' : 'approx.'}</div>
                 </div>
