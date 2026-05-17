@@ -112,7 +112,8 @@ const handleBook = async (e) => {
   )
 
   const ahead = getPeopleAhead()
-  const waitMins = ahead * (saloon.perPersonTime || 20)
+  const workers = saloon.workers || 1
+  const waitMins = Math.ceil(ahead / workers) * (saloon.perPersonTime || 20)
   const totalWaiting = tokens.filter(t => t.status === 'waiting').length
 
   return (
