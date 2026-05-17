@@ -42,6 +42,7 @@ export default function OwnerDashboard() {
         ownerPhone: saloon.ownerPhone || '',
         colorTheme: saloon.colorTheme || '#d4af37',
         perPersonTime: saloon.perPersonTime || 20,
+        workers: saloon.workers || 1,
         openTime: saloon.openTime || '09:00',
         closeTime: saloon.closeTime || '21:00',
         services: [...(saloon.services || [])],
