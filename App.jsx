@@ -1,10 +1,10 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { Toaster } from 'react-hot-toast'
-import { AuthProvider } from './context/AuthContext'
-import Home from './pages/Home'
-import SuperAdmin from './pages/SuperAdmin'
-import OwnerDashboard from './pages/OwnerDashboard'
-import BookingPage from './pages/BookingPage'
+import { AuthProvider } from './AuthContext'
+import Home from './Home'
+import SuperAdmin from './SuperAdmin'
+import OwnerDashboard from './OwnerDashboard'
+import BookingPage from './BookingPage'
 
 export default function App() {
   return (
@@ -27,8 +27,8 @@ export default function App() {
             fontFamily: '"DM Sans", sans-serif',
             fontSize: '14px',
           },
-          success: { iconTheme: { primary: '#d4af37', secondary: '#0d0d0d' } },
-          error: { iconTheme: { primary: '#ef4444', secondary: '#0d0d0d' } },
+          success: { iconTheme: { primary: '#d4af37', secondary: '#000' } },
+          error: { iconTheme: { primary: '#ef4444', secondary: '#fff' } }
         }}
       />
     </AuthProvider>
