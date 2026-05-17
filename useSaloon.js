@@ -1,9 +1,9 @@
 import { useState, useEffect } from 'react'
 import {
   doc, getDoc, setDoc, updateDoc, onSnapshot, collection,
-  query, where, getDocs, deleteDoc, addDoc, serverTimestamp
+  import { db } from './firebase'
 } from 'firebase/firestore'
-import { db } from '../firebase'
+import { todayStr, genSlug, getThreeDaysAgo } from './helpers'
 import dayjs from 'dayjs'
 import { todayStr, genSlug, getThreeDaysAgo } from '../utils/helpers'
 
