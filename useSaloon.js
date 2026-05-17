@@ -138,7 +138,7 @@ export const getAllSaloons = async () => {
 export const createSaloon = async (data) => {
   const id = genSlug(data.name) + '-' + Math.random().toString(36).substr(2, 4)
   await setDoc(doc(db, 'saloons', id), {
-    ...data, id, currentTokenCounter: 0, holidays: [],
+    ...data, id, currentTokenCounter: 0, workers: 1, holidays: [],
     services: ['Haircut', 'Beard Trim', 'Shave'],
     colorTheme: '#d4af37', perPersonTime: 20,
     openTime: '09:00', closeTime: '21:00', createdAt: serverTimestamp(),
