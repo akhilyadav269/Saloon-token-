@@ -113,22 +113,7 @@ const handleBook = async (e) => {
 
   const ahead = getPeopleAhead()
   const workers = saloon.workers || 1
-  const [liveWait, setLiveWait] = useState(Math.ceil(ahead / workers) * (saloon.perPersonTime || 20))
-
-useEffect(() => {
-  const mins = Math.ceil(ahead / workers) * (saloon.perPersonTime || 20)
-  setLiveWait(mins)
-  if (mins <= 0) return
-  const interval = setInterval(() => {
-    setLiveWait(prev => {
-      if (prev <= 1) { clearInterval(interval); return 0 }
-      return prev - 1
-    })
-  }, 60000)
-  return () => clearInterval(interval)
-}, [ahead, workers])
-
-const waitMins = liveWait
+  const waitMins = Math.ceil(ahead / workers) * (saloon.perPersonTime || 20)
   const totalWaiting = tokens.filter(t => t.status === 'waiting').length
 
   return (
