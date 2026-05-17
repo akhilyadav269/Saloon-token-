@@ -286,7 +286,7 @@ export default function OwnerDashboard() {
               </div>
             ) : (
               waitingTokens.length > 0 && (
-                <button onClick={() => handleNext(null)}
+                <button onClick={() => handlePresent(waitingTokens[0])}
                   className="w-full py-4 rounded-2xl font-body font-semibold text-dark-900 transition-opacity hover:opacity-90"
                   style={{ backgroundColor: theme }}>
                   ▶ Serve Next Token
