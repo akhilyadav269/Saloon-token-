@@ -62,7 +62,7 @@ export default function BookingPage() {
     e.preventDefault()
     setBooking(true)
     try {
-      await requestPermission()
+      try { await requestPermission() } catch(e) {}
       const result = await bookToken(saloonId, form)
       const tokenData = { ...result, name: form.name, phone: form.phone, date: dayjs().format('YYYY-MM-DD') }
       setMyToken(tokenData)
