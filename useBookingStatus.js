@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import dayjs from 'dayjs'
-import { isBookingOpen, isHoliday } from '../utils/helpers'
+import { isBookingOpen, isHoliday } from './helpers'
 
 /**
  * useBookingStatus
