@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams } from 'react-router-dom'
 import { useSaloon, useTokens, bookToken, cancelToken, runLateToken } from './useSaloon'
 import { useBookingStatus } from './useBookingStatus'
@@ -14,19 +14,18 @@ export default function BookingPage() {
   const { tokens } = useTokens(saloonId)
   const { open, holiday } = useBookingStatus(saloon)
 
-  const [step, setStep] = useState('form') // form | booked
+  const [step, setStep] = useState('form')
   const [form, setForm] = useState({ name: '', phone: '' })
   const [myToken, setMyToken] = useState(null)
   const [booking, setBooking] = useState(false)
   const [liveWait, setLiveWait] = useState(0)
+  const intervalRef = useRef(null)
 
   const theme = saloon?.colorTheme || '#d4af37'
   const nextDate = saloon ? nextOpenDate(saloon) : null
 
-  // Notify when turn is near
   useNotifyOnTurn({ saloon, tokens, myToken })
 
-  // Restore session from localStorage
   useEffect(() => {
     const saved = localStorage.getItem('myToken_' + saloonId)
     if (saved) {
@@ -42,7 +41,6 @@ export default function BookingPage() {
     }
   }, [saloonId])
 
-  // Sync myToken status from live tokens list
   useEffect(() => {
     if (!myToken || !tokens.length) return
     const live = tokens.find(t => t.id === myToken.id)
@@ -58,7 +56,24 @@ export default function BookingPage() {
     if (!myToken) return 0
     return tokens.filter(t => (t.status === 'waiting' || t.status === 'present') && t.position < myToken.position).length
   }, [myToken, tokens])
-const handleBook = async (e) => {
+
+  const ahead = getPeopleAhead()
+  const workers = saloon?.workers || 1
+  const calcWait = () => Math.ceil(ahead / workers) * (saloon?.perPersonTime || 20)
+
+  useEffect(() => {
+    const mins = calcWait()
+    setLiveWait(mins)
+    if (intervalRef.current) clearInterval(intervalRef.current)
+    if (mins > 0) {
+      intervalRef.current = setInterval(() => {
+        setLiveWait(prev => prev > 0 ? prev - 1 : 0)
+      }, 60000)
+    }
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current) }
+  }, [ahead, workers, saloon?.perPersonTime])
+
+  const handleBook = async (e) => {
     e.preventDefault()
     setBooking(true)
     try {
@@ -73,7 +88,8 @@ const handleBook = async (e) => {
       toast.error(err.message || 'Booking failed')
     }
     setBooking(false)
-}
+  }
+
   const handleCancel = async () => {
     if (!myToken) return
     if (!confirm('Cancel your token?')) return
@@ -112,36 +128,21 @@ const handleBook = async (e) => {
     </div>
   )
 
-  const ahead = getPeopleAhead()
-  const workers = saloon?.workers || 1
-const waitMins = Math.ceil(ahead / workers) * (saloon?.perPersonTime || 20)
-
-useEffect(() => {
-  setLiveWait(waitMins)
-  if (waitMins <= 0) return
-  const interval = setInterval(() => {
-    setLiveWait(prev => prev > 0 ? prev - 1 : 0)
-  }, 60000)
-  return () => clearInterval(interval)
-}, [waitMins])
   const totalWaiting = tokens.filter(t => t.status === 'waiting').length
 
   return (
     <div className="min-h-screen bg-black text-white" style={{ fontFamily: '"DM Sans", sans-serif' }}>
-      {/* Background glows */}
       <div className="fixed inset-0 pointer-events-none overflow-hidden">
         <div className="absolute -top-32 left-1/2 -translate-x-1/2 w-[500px] h-[500px] rounded-full opacity-[0.06] blur-[80px]"
           style={{ background: theme }} />
         <div className="absolute bottom-0 right-0 w-72 h-72 rounded-full opacity-[0.04] blur-[60px]"
           style={{ background: theme }} />
-        {/* Grid */}
         <div className="absolute inset-0 opacity-[0.015]"
           style={{ backgroundImage: 'linear-gradient(#ffffff 1px, transparent 1px), linear-gradient(90deg, #ffffff 1px, transparent 1px)', backgroundSize: '48px 48px' }} />
       </div>
 
       <div className="relative max-w-md mx-auto min-h-screen flex flex-col px-5">
 
-        {/* ── HEADER ── */}
         <div className="pt-10 pb-6 text-center">
           <div className="inline-flex items-center justify-center w-16 h-16 rounded-2xl mb-5 border"
             style={{ background: theme + '15', borderColor: theme + '30' }}>
@@ -152,7 +153,6 @@ useEffect(() => {
             {saloon.name}
           </h1>
 
-          {/* Status pill */}
           <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full text-sm border"
             style={{
               background: open ? '#14532d30' : '#7f1d1d30',
@@ -168,10 +168,8 @@ useEffect(() => {
           </p>
         </div>
 
-        {/* ── MAIN ── */}
         <div className="flex-1 pb-10 space-y-4">
 
-          {/* Holiday Banner */}
           {holiday && (
             <div className="rounded-2xl p-5 text-center border border-yellow-900/30 bg-yellow-900/10">
               <div className="text-3xl mb-2">🏖️</div>
@@ -184,7 +182,6 @@ useEffect(() => {
             </div>
           )}
 
-          {/* Closed Banner */}
           {!holiday && !open && (
             <div className="rounded-2xl p-5 text-center border border-gray-800 bg-gray-900/40">
               <div className="text-3xl mb-2">🔒</div>
@@ -196,10 +193,8 @@ useEffect(() => {
             </div>
           )}
 
-          {/* ── BOOKING FORM ── */}
           {step === 'form' && open && !holiday && (
             <div className="space-y-4 animate-slide-up">
-              {/* Queue snapshot */}
               <div className="flex items-center justify-between rounded-xl px-4 py-3 border border-gray-800 bg-gray-900/60 text-sm">
                 <span className="text-gray-400">People waiting now</span>
                 <span className="font-semibold tabular-nums" style={{ color: theme }}>
@@ -231,7 +226,6 @@ useEffect(() => {
                   <p className="text-gray-600 text-xs mt-1.5">One token per number per day</p>
                 </div>
 
-                {/* Services */}
                 {saloon.services?.length > 0 && (
                   <div>
                     <label className="block text-gray-400 text-sm mb-2">Services Available</label>
@@ -254,13 +248,10 @@ useEffect(() => {
             </div>
           )}
 
-          {/* ── TOKEN DISPLAY ── */}
           {step === 'booked' && myToken && (
             <div className="space-y-4 animate-slide-up">
-              {/* Big token card */}
               <div className="rounded-3xl p-8 text-center border-2 relative overflow-hidden"
                 style={{ borderColor: theme + '50', background: 'linear-gradient(135deg, #0d0d0d 0%, #141414 100%)' }}>
-                {/* Subtle radial glow inside card */}
                 <div className="absolute inset-0 opacity-5 rounded-3xl"
                   style={{ background: `radial-gradient(circle at 50% 50%, ${theme}, transparent 70%)` }} />
                 <div className="relative">
@@ -280,7 +271,6 @@ useEffect(() => {
                 </div>
               </div>
 
-              {/* Stats */}
               <div className="grid grid-cols-2 gap-3">
                 <div className="bg-gray-900 border border-gray-800 rounded-2xl p-4 text-center">
                   <div className="text-gray-500 text-xs uppercase tracking-wider mb-2">Ahead of You</div>
@@ -297,19 +287,17 @@ useEffect(() => {
                     lineHeight: 1,
                     color: ahead === 0 ? '#4ade80' : theme
                   }}>
-                    {ahead === 0 ? '🪒 Now' : formatMinutes(liveMins)}
+                    {ahead === 0 ? '🪒 Now' : formatMinutes(liveWait)}
                   </div>
                   <div className="text-gray-600 text-xs mt-1">{ahead === 0 ? 'your turn!' : 'approx.'}</div>
                 </div>
               </div>
 
-              {/* Live badge */}
               <div className="flex items-center justify-center gap-2">
                 <span className="w-1.5 h-1.5 rounded-full bg-green-400 animate-pulse" />
                 <span className="text-gray-500 text-xs">Queue updates live</span>
               </div>
 
-              {/* Action Buttons */}
               <div className="grid grid-cols-2 gap-3">
                 <button onClick={handleRunLate}
                   className="py-3.5 rounded-xl text-sm font-medium bg-gray-900 border border-gray-700 hover:bg-gray-800 text-gray-200 transition-colors">
@@ -328,7 +316,6 @@ useEffect(() => {
           )}
         </div>
 
-        {/* ── FOOTER ── */}
         <div className="pb-8 pt-4 border-t border-gray-900 text-center">
           {saloon.ownerPhone && (
             <a href={'tel:' + saloon.ownerPhone}
@@ -341,4 +328,5 @@ useEffect(() => {
       </div>
     </div>
   )
-}
+                              }
+        
