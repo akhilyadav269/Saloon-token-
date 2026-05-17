@@ -149,5 +149,9 @@ export const createSaloon = async (data) => {
 export const updateSaloon = async (saloonId, data) =>
   updateDoc(doc(db, 'saloons', saloonId), data)
 
-export const deleteSaloon = async (saloonId) =>
-  deleteDoc(doc(db, 'saloons', saloonId))
+export const deleteSaloon = async (saloonId) => {
+  const tokensRef = collection(db, 'saloons', saloonId, 'tokens')
+  const snap = await getDocs(tokensRef)
+  await Promise.all(snap.docs.map(d => deleteDoc(d.ref)))
+  await deleteDoc(doc(db, 'saloons', saloonId))
+}
