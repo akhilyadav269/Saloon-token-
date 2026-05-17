@@ -57,8 +57,7 @@ export default function BookingPage() {
     if (!myToken) return 0
     return tokens.filter(t => t.status === 'waiting' && t.tokenNumber < myToken.tokenNumber).length
   }, [myToken, tokens])
-
-  const handleBook = async (e) => {
+const handleBook = async (e) => {
     e.preventDefault()
     setBooking(true)
     try {
@@ -66,13 +65,16 @@ export default function BookingPage() {
       const result = await bookToken(saloonId, form)
       const tokenData = { ...result, name: form.name, phone: form.phone, date: dayjs().format('YYYY-MM-DD') }
       setMyToken(tokenData)
-      localStorage.setItem('myToken_' + saloonId, JSON.stringify(tokenData))
+      try { localStorage.setItem('myToken_' + saloonId, JSON.stringify(tokenData)) } catch(e) {}
       setStep('booked')
       toast.success('Token booked! 🎫')
     } catch (err) {
       toast.error(err.message || 'Booking failed')
     }
     setBooking(false)
+}
+  
+  
   }
 
   const handleCancel = async () => {
