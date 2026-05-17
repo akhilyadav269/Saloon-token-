@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
-import { useAuth } from '../context/AuthContext'
-import { getAllSaloons, createSaloon, updateSaloon, deleteSaloon } from '../hooks/useSaloon'
+import { useAuth } from './AuthContext'
+import { getAllSaloons, createSaloon, updateSaloon, deleteSaloon } from './useSaloon'
 import toast from 'react-hot-toast'
 
 const THEMES = ['#d4af37','#e74c3c','#2ecc71','#3498db','#9b59b6','#e67e22','#1abc9c','#e91e63']
