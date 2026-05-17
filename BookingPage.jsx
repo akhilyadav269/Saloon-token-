@@ -55,7 +55,7 @@ export default function BookingPage() {
 
   const getPeopleAhead = useCallback(() => {
     if (!myToken) return 0
-    return tokens.filter(t => t.status === 'waiting' && t.tokenNumber < myToken.tokenNumber).length
+    return tokens.filter(t => t.status === 'waiting' && t.position < myToken.position).length
   }, [myToken, tokens])
 const handleBook = async (e) => {
     e.preventDefault()
