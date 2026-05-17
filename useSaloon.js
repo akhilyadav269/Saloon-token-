@@ -1,11 +1,11 @@
 import { useState, useEffect } from 'react'
 import {
   doc, getDoc, setDoc, updateDoc, onSnapshot, collection,
-  import { db } from './firebase'
+  query, where, getDocs, deleteDoc, addDoc, serverTimestamp
 } from 'firebase/firestore'
-import { todayStr, genSlug, getThreeDaysAgo } from './helpers'
+import { db } from './firebase'
 import dayjs from 'dayjs'
-import { todayStr, genSlug, getThreeDaysAgo } from '../utils/helpers'
+import { todayStr, genSlug, getThreeDaysAgo } from './helpers'
 
 // ── Live Saloon ────────────────────────────────────────────
 export const useSaloon = (saloonId) => {
@@ -26,7 +26,6 @@ export const useSaloon = (saloonId) => {
   return { saloon, loading }
 }
 
-// ── Live Tokens (today) ────────────────────────────────────
 export const useTokens = (saloonId) => {
   const [tokens, setTokens] = useState([])
   const [loading, setLoading] = useState(true)
@@ -49,53 +48,34 @@ export const useTokens = (saloonId) => {
   return { tokens, loading }
 }
 
-// ── Book Token ─────────────────────────────────────────────
 export const bookToken = async (saloonId, { name, phone }) => {
   const today = todayStr()
   const saloonRef = doc(db, 'saloons', saloonId)
   const saloonSnap = await getDoc(saloonRef)
   if (!saloonSnap.exists()) throw new Error('Saloon not found')
   const saloon = saloonSnap.data()
-
   const tokensRef = collection(db, 'saloons', saloonId, 'tokens')
-
-  // Duplicate phone check
   const dupQ = query(tokensRef, where('date', '==', today), where('phone', '==', phone), where('status', '!=', 'cancelled'))
   const dupSnap = await getDocs(dupQ)
   if (!dupSnap.empty) throw new Error('You already have a token for today')
-
-  // Next token number
   const currentToken = (saloon.currentTokenCounter || 0) + 1
   await updateDoc(saloonRef, { currentTokenCounter: currentToken })
-
-  // Count waiting ahead
   const waitingQ = query(tokensRef, where('date', '==', today), where('status', '==', 'waiting'))
   const waitingSnap = await getDocs(waitingQ)
   const position = waitingSnap.size
-
   const tokenDoc = {
-    name,
-    phone,
-    tokenNumber: currentToken,
-    status: 'waiting',
-    date: today,
-    position,
-    createdAt: serverTimestamp(),
-    notified: false,
+    name, phone, tokenNumber: currentToken, status: 'waiting',
+    date: today, position, createdAt: serverTimestamp(), notified: false,
   }
-
   const ref = await addDoc(tokensRef, tokenDoc)
   return { id: ref.id, tokenNumber: currentToken, position }
 }
 
-// ── Owner Actions ──────────────────────────────────────────
 export const markPresent = async (saloonId, tokenId) =>
   updateDoc(doc(db, 'saloons', saloonId, 'tokens', tokenId), { status: 'present' })
 
 export const skipToken = async (saloonId, tokenId) => {
-  await updateDoc(doc(db, 'saloons', saloonId, 'tokens', tokenId), {
-    status: 'skipped', skippedAt: serverTimestamp()
-  })
+  await updateDoc(doc(db, 'saloons', saloonId, 'tokens', tokenId), { status: 'skipped', skippedAt: serverTimestamp() })
   await recalcPositions(saloonId)
 }
 
@@ -131,7 +111,6 @@ const recalcPositions = async (saloonId) => {
   ))
 }
 
-// ── Reports ────────────────────────────────────────────────
 export const getReports = async (saloonId) => {
   const reports = {}
   for (let i = 0; i < 3; i++) {
@@ -151,7 +130,6 @@ export const getReports = async (saloonId) => {
   return reports
 }
 
-// ── Super Admin ────────────────────────────────────────────
 export const getAllSaloons = async () => {
   const snap = await getDocs(collection(db, 'saloons'))
   return snap.docs.map(d => ({ id: d.id, ...d.data() }))
@@ -160,16 +138,10 @@ export const getAllSaloons = async () => {
 export const createSaloon = async (data) => {
   const id = genSlug(data.name) + '-' + Math.random().toString(36).substr(2, 4)
   await setDoc(doc(db, 'saloons', id), {
-    ...data,
-    id,
-    currentTokenCounter: 0,
-    holidays: [],
+    ...data, id, currentTokenCounter: 0, holidays: [],
     services: ['Haircut', 'Beard Trim', 'Shave'],
-    colorTheme: '#d4af37',
-    perPersonTime: 20,
-    openTime: '09:00',
-    closeTime: '21:00',
-    createdAt: serverTimestamp(),
+    colorTheme: '#d4af37', perPersonTime: 20,
+    openTime: '09:00', closeTime: '21:00', createdAt: serverTimestamp(),
   })
   return id
 }
