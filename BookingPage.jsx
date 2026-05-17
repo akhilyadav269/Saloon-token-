@@ -73,10 +73,6 @@ const handleBook = async (e) => {
     }
     setBooking(false)
 }
-  
-  
-  }
-
   const handleCancel = async () => {
     if (!myToken) return
     if (!confirm('Cancel your token?')) return
