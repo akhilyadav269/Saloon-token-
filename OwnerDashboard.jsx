@@ -99,9 +99,11 @@ export default function OwnerDashboard() {
 
   const handleNext = async (currentTok) => {
     try {
-      await nextToken(saloonId, currentTok?.id)
-      toast.success('Next token!')
-    } catch { }
+      if (currentTok?.id) {
+        await nextToken(saloonId, currentTok.id)
+        toast.success('Next token!')
+      }
+    } catch { toast.error('Failed') }
   }
 
   const handleSkip = async (token) => {
@@ -272,7 +274,7 @@ export default function OwnerDashboard() {
                     <div className="text-dark-400 font-body text-sm">{presentToken.phone}</div>
                   </div>
                   <div className="flex flex-col gap-2">
-                    <button onClick={() => handlePresent(waitingTokens[0])}
+                    <button onClick={() => handleNext(presentToken)}
                       className="px-6 py-2.5 rounded-xl font-body font-semibold text-sm text-dark-900 transition-opacity hover:opacity-90"
                       style={{ backgroundColor: theme }}>
                       ▶ Next
