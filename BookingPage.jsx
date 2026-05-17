@@ -18,6 +18,7 @@ export default function BookingPage() {
   const [form, setForm] = useState({ name: '', phone: '' })
   const [myToken, setMyToken] = useState(null)
   const [booking, setBooking] = useState(false)
+  const [liveWait, setLiveWait] = useState(0)
 
   const theme = saloon?.colorTheme || '#d4af37'
   const nextDate = saloon ? nextOpenDate(saloon) : null
@@ -112,8 +113,17 @@ const handleBook = async (e) => {
   )
 
   const ahead = getPeopleAhead()
-  const workers = saloon.workers || 1
-  const waitMins = Math.ceil(ahead / workers) * (saloon.perPersonTime || 20)
+  const workers = saloon?.workers || 1
+const waitMins = Math.ceil(ahead / workers) * (saloon?.perPersonTime || 20)
+
+useEffect(() => {
+  setLiveWait(waitMins)
+  if (waitMins <= 0) return
+  const interval = setInterval(() => {
+    setLiveWait(prev => prev > 0 ? prev - 1 : 0)
+  }, 60000)
+  return () => clearInterval(interval)
+}, [waitMins])
   const totalWaiting = tokens.filter(t => t.status === 'waiting').length
 
   return (
