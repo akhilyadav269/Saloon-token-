@@ -101,13 +101,7 @@ export default function OwnerDashboard() {
     try {
       await nextToken(saloonId, currentTok?.id)
       toast.success('Next token!')
-      // Check if someone is ≤10 min away and notify
-      const waiting = tokens.filter(t => t.status === 'waiting')
-      if (waiting.length > 0 && saloon) {
-        const firstWaitMins = 0 * saloon.perPersonTime // position 0 = next
-        if (firstWaitMins <= 10) sendNotification(saloon.name, 'Your turn is next — please come now!')
-      }
-    } catch { toast.error('Failed') }
+    } catch { }
   }
 
   const handleSkip = async (token) => {
@@ -278,7 +272,7 @@ export default function OwnerDashboard() {
                     <div className="text-dark-400 font-body text-sm">{presentToken.phone}</div>
                   </div>
                   <div className="flex flex-col gap-2">
-                    <button onClick={() => handleNext(presentToken)}
+                    onClick={() => handlePresent(waitingTokens[0])}
                       className="px-6 py-2.5 rounded-xl font-body font-semibold text-sm text-dark-900 transition-opacity hover:opacity-90"
                       style={{ backgroundColor: theme }}>
                       ▶ Next
