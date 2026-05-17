@@ -1,8 +1,8 @@
 import { useEffect, useRef } from 'react'
 import dayjs from 'dayjs'
 import { doc, updateDoc, collection, query, where, getDocs, deleteDoc } from 'firebase/firestore'
-import { db } from '../firebase'
-import { getThreeDaysAgo } from '../utils/helpers'
+import { db } from './firebase'
+import { getThreeDaysAgo } from './helpers'
 
 /**
  * useMidnightReset
