@@ -10,5 +10,11 @@
         { "key": "Content-Type", "value": "application/javascript" }
       ]
     }
+  ],
+  "crons": [
+    {
+      "path": "/api/reset",
+      "schedule": "30 18 * * *"
+    }
   ]
 }
